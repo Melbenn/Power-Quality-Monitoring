@@ -115,7 +115,7 @@ void loop() {
 
   String node;
 
-  node = nodeCode + "_" + dateStringNode + "/" + timeString;
+  node = nodeCode + "/" + dateStringNode + "/" + timeString;
 
 
   firebase.setJson(node, jsonOut);
