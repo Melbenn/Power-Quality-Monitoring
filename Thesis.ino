@@ -6,8 +6,7 @@
 #include <time.h>              // Time
 
 // Firebase credentials
-#define REFERENCE_URL "https://test-4b0a3-default-rtdb.asia-southeast1.firebasedatabase.app/"
-
+#define REFERENCE_URL "https://powerquality-d9f8e-default-rtdb.asia-southeast1.firebasedatabase.app/"
 // Firebase and JSON
 Firebase firebase(REFERENCE_URL);
 JsonDocument bufferDoc;       // Buffer to hold multiple readings
@@ -64,16 +63,22 @@ void loop() {
     char dateString[20];
     char dateStringNode[20];
     char timeString[20];
+    char uploadTimeString[20];
     struct tm timeinfo;
 
     if (getLocalTime(&timeinfo)) {
       sprintf(dateString, "%02d/%02d/%04d", timeinfo.tm_mday, timeinfo.tm_mon + 1, timeinfo.tm_year + 1900);
       sprintf(dateStringNode, "%04d/%02d/%02d", timeinfo.tm_year + 1900, timeinfo.tm_mon + 1, timeinfo.tm_mday);
       sprintf(timeString, "%02d:%02d:%02d", timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec);
+      if(bufferDoc.size() == 1){
+        sprintf(uploadTimeString, "%02d:%02d:%02d", timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec);
+      }
     } else {
       Serial.println("Failed to get time.");
       return;
     }
+
+    
 
     float voltage = pzem.voltage();
     float current = pzem.current();
@@ -92,6 +97,7 @@ void loop() {
 
     // Add reading to JSON array
     JsonObject reading = bufferDoc.createNestedObject(timeString);
+    reading["index"] = bufferDoc.size();
     reading["date"] = dateString;
     reading["time"] = timeString;
     reading["voltage"] = voltage;
@@ -102,11 +108,11 @@ void loop() {
     reading["powerFactor"] = pf;
 
     // Send batch to Firebase when reaching the batch size
+    
     if (bufferDoc.size() >= batchSize) {
       String jsonOut;
       serializeJson(bufferDoc, jsonOut);
-
-      String node = nodeCode + "/" + dateStringNode + "/" + timeString;
+      String node = nodeCode + "/" + dateStringNode + "/" + uploadTimeString;
       if (WiFi.status() == WL_CONNECTED) {
         firebase.setJson(node, jsonOut);
         Serial.println("Batch uploaded to Firebase.");
