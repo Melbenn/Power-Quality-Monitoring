@@ -1,3 +1,4 @@
+
 #include <WiFiManager.h>       // WiFiManager library
 #include <Firebase.h>          // Firebase
 #include <ArduinoJson.h>       // JSON formatter
@@ -10,7 +11,7 @@
 // Firebase and JSON
 Firebase firebase(REFERENCE_URL);
 JsonDocument bufferDoc;       // Buffer to hold multiple readings
-JsonArray readings = bufferDoc.to<JsonArray>();
+//JsonArray readings = bufferDoc.to<JsonArray>();
 
 // PZEM004Tv30 configuration
 #define PZEM_RX_PIN 16 // RX pin of ESP32 connected to TX pin of PZEM
@@ -60,11 +61,13 @@ void loop() {
   if (currentMillis - previousMillis >= interval) {
     previousMillis = currentMillis;
 
+    char dateString[20];
     char dateStringNode[20];
     char timeString[20];
     struct tm timeinfo;
 
     if (getLocalTime(&timeinfo)) {
+      sprintf(dateString, "%02d/%02d/%04d", timeinfo.tm_mday, timeinfo.tm_mon + 1, timeinfo.tm_year + 1900);
       sprintf(dateStringNode, "%04d/%02d/%02d", timeinfo.tm_year + 1900, timeinfo.tm_mon + 1, timeinfo.tm_mday);
       sprintf(timeString, "%02d:%02d:%02d", timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec);
     } else {
@@ -88,7 +91,8 @@ void loop() {
     Serial.printf("Power Factor: %.2f\n", pf);
 
     // Add reading to JSON array
-    JsonObject reading = readings.createNestedObject();
+    JsonObject reading = bufferDoc.createNestedObject(timeString);
+    reading["date"] = dateString;
     reading["time"] = timeString;
     reading["voltage"] = voltage;
     reading["current"] = current;
@@ -98,11 +102,11 @@ void loop() {
     reading["powerFactor"] = pf;
 
     // Send batch to Firebase when reaching the batch size
-    if (readings.size() >= batchSize) {
+    if (bufferDoc.size() >= batchSize) {
       String jsonOut;
       serializeJson(bufferDoc, jsonOut);
 
-      String node = nodeCode + "/" + dateStringNode;
+      String node = nodeCode + "/" + dateStringNode + "/" + timeString;
       if (WiFi.status() == WL_CONNECTED) {
         firebase.setJson(node, jsonOut);
         Serial.println("Batch uploaded to Firebase.");
@@ -111,7 +115,7 @@ void loop() {
         WiFi.reconnect();
       }
 
-      readings.clear(); // Clear buffer after upload
+      bufferDoc.clear(); // Clear buffer after upload
     }
   }
 }
