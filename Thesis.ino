@@ -70,9 +70,6 @@ void loop() {
       sprintf(dateString, "%02d/%02d/%04d", timeinfo.tm_mday, timeinfo.tm_mon + 1, timeinfo.tm_year + 1900);
       sprintf(dateStringNode, "%04d/%02d/%02d", timeinfo.tm_year + 1900, timeinfo.tm_mon + 1, timeinfo.tm_mday);
       sprintf(timeString, "%02d:%02d:%02d", timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec);
-      if(bufferDoc.size() == 1){
-        sprintf(uploadTimeString, "%02d:%02d:%02d", timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec);
-      }
     } else {
       Serial.println("Failed to get time.");
       return;
@@ -112,6 +109,7 @@ void loop() {
     if (bufferDoc.size() >= batchSize) {
       String jsonOut;
       serializeJson(bufferDoc, jsonOut);
+      sprintf(uploadTimeString, "%02d:%02d:%02d", timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec - 9);
       String node = nodeCode + "/" + dateStringNode + "/" + uploadTimeString;
       if (WiFi.status() == WL_CONNECTED) {
         firebase.setJson(node, jsonOut);
