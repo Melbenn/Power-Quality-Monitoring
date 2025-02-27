@@ -100,8 +100,8 @@ void TaskReadSensor(void *pvParameters) {
         struct tm timeinfo;
         if (getLocalTime(&timeinfo)) {
             xSemaphoreTake(dataMutex, portMAX_DELAY);
-            sprintf(dateString, "%02d/%02d/%04d", 
-                    timeinfo.tm_mday, timeinfo.tm_mon + 1, timeinfo.tm_year + 1900);
+            sprintf(dateString, "%04d/%02d/%02d", 
+                    timeinfo.tm_year, timeinfo.tm_mon + 1, timeinfo.mday + 1900);
             sprintf(timeString, "%02d:%02d:%02d", 
                     timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec);
             xSemaphoreGive(dataMutex);
